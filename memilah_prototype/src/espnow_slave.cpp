@@ -1,37 +1,5 @@
-#include <esp_now.h>
-#include <WiFi.h>
+#include "espnow_slave.h"
 
-// REPLACE WITH THE MAC Address of your receiver 
-uint8_t broadcastAddress[] = {0x48, 0xE7, 0x29, 0x9F, 0xE6, 0x48};
-
-// Define variables to store BME280 readings to be sent
-float temperature;
-float humidity;
-float pressure;
-
-// Define variables to store incoming readings
-float incomingTemp;
-float incomingHum;
-float incomingPres;
-
-// Variable to store if sending data was successful
-String success;
-
-//Structure example to send data
-//Must match the receiver structure
-typedef struct struct_message {
-    float temp;
-    float hum;
-    float pres;
-} struct_message;
-
-// Create a struct_message called BME280Readings to hold sensor readings
-struct_message BME280Readings;
-
-// Create a struct_message to hold incoming sensor readings
-struct_message incomingReadings;
-
-esp_now_peer_info_t peerInfo;
 
 // Callback when data is sent
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
@@ -50,12 +18,10 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
   Serial.print("Bytes received: ");
   Serial.println(len);
-  incomingTemp = incomingReadings.temp;
-  incomingHum = incomingReadings.hum;
-  incomingPres = incomingReadings.pres;
+  incomingTrashType = incomingReadings.trashType;
 }
  
-void esp_now_setup() {
+void espnow_slave_setup() {
  
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
@@ -84,15 +50,10 @@ void esp_now_setup() {
   esp_now_register_recv_cb(OnDataRecv);
 }
  
-void esp_now_loop() {
- 
-  // Set values to send
-  BME280Readings.temp = temperature;
-  BME280Readings.hum = humidity;
-  BME280Readings.pres = pressure;
+void espnow_slave_loop() {
 
   // Send message via ESP-NOW
-  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &BME280Readings, sizeof(BME280Readings));
+  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &UltrasonicReadings, sizeof(UltrasonicReadings));
    
   if (result == ESP_OK) {
     Serial.println("Sent with success");
@@ -100,6 +61,7 @@ void esp_now_loop() {
   else {
     Serial.println("Error sending the data");
   }
+
   delay(10000);
 }
 

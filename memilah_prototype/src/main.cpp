@@ -1,11 +1,10 @@
 #include <Wire.h>
 #include <Arduino.h>
+#include "WiFi.h"
 
-#include "infrared.h"
 #include "stepper.h"
 #include "ultrasonic.h"
-#include "firebase_functions.h"
-#include "wifi_setup.h"
+#include "espnow_slave.h"
 
 //Infrared variable
 bool ObjectDetected;
@@ -24,12 +23,6 @@ void setup() {
   
   Serial.begin(115200);
 
-  //WiFi Settings
-  WiFiConnect();
-
-  //Firebase Settings
-  // firebase_setup();
-
   pinMode(FLASH_GPIO_NUM, OUTPUT);
 
   //Stepper Settings
@@ -38,36 +31,16 @@ void setup() {
   //Ultrasonic Settings
   // ultrasonic_setup();
 
-  //Infrared Settings
-  pinMode(SENSOR_PIN, INPUT);
-
-  //Built in LED
-  // pinMode(33, OUTPUT);
-
   xTaskCreatePinnedToCore(MoveStepper, "MoveStepper", 2048, NULL, 2, NULL, 0); 
 }
 
 void loop() {
 
   vTaskDelay(0);
-
-  // if(ObjectDetected == true){
-  //   delay(1000);
-  //   firebase_loop();
-  // }
   
-  // digitalWrite(FLASH_GPIO_NUM, HIGH);
-  // delay(2000);
-  // digitalWrite(FLASH_GPIO_NUM, LOW);
-  // delay(2000);
 
-  // if(TrashType == "Paper"){
-  //     digitalWrite(33, HIGH);
-  //   }else{
-  //     digitalWrite(33, HIGH);
-  //   }
 
-  InfraredSensor();
+
 
   // if(ObjectDetected == true){
   //     digitalWrite(FLASH_GPIO_NUM, HIGH);
