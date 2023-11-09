@@ -1,14 +1,10 @@
 #include <Wire.h>
 #include <Arduino.h>
 
-#include "infrared.h"
 #include "stepper.h"
 #include "ultrasonic.h"
 #include "firebase_functions.h"
 #include "wifi_setup.h"
-
-//Infrared variable
-bool ObjectDetected;
 
 //Built in LED FLASH
 #define FLASH_GPIO_NUM 4
@@ -28,18 +24,15 @@ void setup() {
   WiFiConnect();
 
   //Firebase Settings
-  // firebase_setup();
+  firebase_setup();
 
   pinMode(FLASH_GPIO_NUM, OUTPUT);
 
   //Stepper Settings
-  stepper_setup();
+  // stepper_setup();
 
   //Ultrasonic Settings
   // ultrasonic_setup();
-
-  //Infrared Settings
-  pinMode(SENSOR_PIN, INPUT);
 
   //Built in LED
   // pinMode(33, OUTPUT);
@@ -55,6 +48,10 @@ void loop() {
   //   delay(1000);
   //   firebase_loop();
   // }
+
+  firebase_loop();
+
+
   
   // digitalWrite(FLASH_GPIO_NUM, HIGH);
   // delay(2000);
@@ -66,8 +63,6 @@ void loop() {
   //   }else{
   //     digitalWrite(33, HIGH);
   //   }
-
-  InfraredSensor();
 
   // if(ObjectDetected == true){
   //     digitalWrite(FLASH_GPIO_NUM, HIGH);
@@ -86,7 +81,7 @@ void MoveStepper(void *pvParameters) {
 
   while (1){
     
-    stepper_loop();
+    // stepper_loop();
 
     
     vTaskDelay(10);

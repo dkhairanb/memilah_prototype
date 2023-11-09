@@ -4,8 +4,6 @@
 #include <Firebase_ESP_Client.h>
 #include <addons/TokenHelper.h>
 
-#include "camera.h"
-
 #define API_KEY "AIzaSyCjr5U8W62B2LGcdZiRl_A9FX5FEUzawRo"
 #define FIREBASE_PROJECT_ID "segrebox"
 
@@ -22,112 +20,32 @@ FirebaseConfig config;
 extern String TrashType;
 boolean takeNewPhoto = true;
 
-
+int trashCategory; 
 bool taskCompleted = false;
 
 unsigned long dataMillis = 0;
 
-String detectionResultString;
+//String detectionResultString;
 
-String getPhotoPath() {
-  return String("/") + WiFi.macAddress() + ".jpg";
-}
+double levelPlastic = 0.111;//nanti gantiin pake data sensor
+double levelPaper = 0.522;
+double levelOthers = 0.133;
 
-String getBucketPhoto() {
-  return String("/waste-detections/") + WiFi.macAddress() + ".jpg";
-}
+double latCoordinates = 4.5882;//nanti gantiin pake data gps
+double longCoordinates = 9.153;
 
-void fcsUploadCallback(FCS_UploadStatusInfo info);
+String documentPath;
 
-void capturePhotoSaveLittleFS(void) {
-  // Dispose of the first pictures because of bad quality
-  camera_fb_t* fb = NULL;
-  // Skip the first 3 frames (increase/decrease the number as needed).
-  for (int i = 0; i < 4; i++) {
-    fb = esp_camera_fb_get();
-    esp_camera_fb_return(fb);
-    fb = NULL;
-  }
 
-  // Turn on the flash
-  pinMode(4, OUTPUT); // Built-in LED pin
-  digitalWrite(4, HIGH); // Turn on the flash
 
-  // Take a new photo
-  fb = NULL;
-  fb = esp_camera_fb_get();
-  if (!fb) {
-    Serial.println("Camera capture failed");
-    delay(1000);
-    ESP.restart();
-  }
+void updateCoordinates(); //panggil di setup (msi blom bisa update valuenya)
 
-  // Turn off the flash
-  digitalWrite(4, LOW); // Turn off the flash
-  pinMode(4, INPUT); // Release the LED pin
-
-  // Photo file name
-  String photoPath = getPhotoPath();
-  Serial.printf("Picture file name: %s\n", photoPath.c_str());
-  File file = LittleFS.open(photoPath.c_str(), FILE_WRITE);
-
-  // Insert the data into the photo file
-  if (!file) {
-    Serial.println("Failed to open file in writing mode");
-  } else {
-    file.write(fb->buf, fb->len); // payload (image), payload length
-    Serial.print("The picture has been saved in ");
-    Serial.print(photoPath.c_str());
-    Serial.print(" - Size: ");
-    Serial.print(fb->len);
-    Serial.println(" bytes");
-  }
-  // Close the file
-  file.close();
-  esp_camera_fb_return(fb);
-}
-
-void initLittleFS() {
-  if (!LittleFS.begin(true)) {
-    Serial.println("An Error has occurred while mounting LittleFS");
-    ESP.restart();
-  } else {
-    delay(500);
-    Serial.println("LittleFS mounted successfully");
-  }
-}
-
-// Function to write data to Firebase Firestore
-void writeDataToFirebase() {
-  // Create a FirebaseJson object to set the data you want to write
-  FirebaseJson content;
-
-  content.set("fields/detail/stringValue", "...");
-  content.set("fields/detection-result/stringValue", "plastic");
-  content.set("fields/event/stringValue", "uuid event");
-  content.set("fields/imageUrl/stringValue", "imageurl");
-  content.set("fields/location/geoPointValue/latitude", 1.486284);
-  content.set("fields/location/geoPointValue/longitude", 1.5555);
-  content.set("fields/name/stringValue", "nama bin");
-  content.set("fields/fill-levels/mapValue/fields/other/doubleValue", 0.2);
-  content.set("fields/fill-levels/mapValue/fields/paper/doubleValue", 0.3);
-  content.set("fields/fill-levels/mapValue/fields/plastic/doubleValue", 0.4);
-
-  // Specify the document path
-  String documentPath = "trash-bins/" + WiFi.macAddress();
-
-  Serial.print("Creating document... ");
-
-  if (Firebase.Firestore.createDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), content.raw()))
-    Serial.printf("OK\n%s\n\n", fbdo.payload().c_str());
-  else
-    Serial.println(fbdo.errorReason());
-}
+void updateLevels(); //Panggil abis get data dari sensor di loop
 
 // Function to get data from Firebase Firestore
-void getDataFromFirebase() {
+
+void getResult() { //panggil di loop bagian awal2
   String documentPath = "trash-bins/" + WiFi.macAddress();
-  //String mask = "`fill-levels`";
   String mask = "`detection-result`";
 
   if (Firebase.Firestore.getDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), mask.c_str())) {
@@ -142,11 +60,22 @@ void getDataFromFirebase() {
       Serial.println(error.c_str());
     } else {
 
-      detectionResultString = doc["fields"]["detection-result"]["stringValue"].as<String>();
+      //detectionResultString = doc["fields"]["'detection-result`"]["stringValue"].as<String>();
       TrashType  = doc["fields"]["detection-result"]["stringValue"].as<String>();
 
+      if (TrashType == "Plastic") {
+        trashCategory = 0;
+      } else if (TrashType == "Paper") {
+        trashCategory = 1;
+      } else if (TrashType == "Others") {
+        trashCategory = 2;
+      }
+
       Serial.println("Detection result: ");
-      Serial.print(detectionResultString);
+      Serial.print(TrashType);
+
+      Serial.println("int: ");
+      Serial.print(trashCategory);
     }
   } else {
     Serial.print("Failed to fetch data: ");
@@ -154,7 +83,27 @@ void getDataFromFirebase() {
   }
 }
 
-void updateFirestoreFieldValue(const String& documentPath, const String& fieldPath, const String& newValue) {
+void resetDetectionResult(){ //setelah gerakin motor panggil function ini di function tempat gerakin steppernya
+  // Create a FirebaseJson object to hold the data you want to update
+  FirebaseJson content;
+
+  String documentPath = "trash-bins/" + WiFi.macAddress();
+
+  content.clear();
+
+  // Set the new value for the field you want to update
+  content.set("fields/detection-result/stringValue", "-");
+
+  Serial.print("resetting results... ");
+
+  if (Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "" /* databaseId can be (default) or empty */, documentPath.c_str(), content.raw(),  "`detection-result`"))
+    //Serial.printf("OK\n%s\n\n", fbdo.payload().c_str());
+    Serial.println("ok");
+  else
+    Serial.println(fbdo.errorReason());
+}
+
+ void updateFirestoreFieldValue(const String& documentPath, const String& fieldPath, const double& newValue, const String variablesUpdated) {// gausah dipanggil kemana2
   // Create a FirebaseJson object to hold the data you want to update
   FirebaseJson content;
 
@@ -163,53 +112,41 @@ void updateFirestoreFieldValue(const String& documentPath, const String& fieldPa
   // Set the new value for the field you want to update
   content.set(fieldPath.c_str(), newValue);
 
-  String variablesUpdated = "name";
-
   Serial.print("Updating document... ");
 
-  if (Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "" /* databaseId can be (default) or empty */, documentPath.c_str(), content.raw(), variablesUpdated.c_str()))
-    Serial.printf("OK\n%s\n\n", fbdo.payload().c_str());
-  else
-    Serial.println(fbdo.errorReason());
-}
-
-void shotAndSend() {
-  if (takeNewPhoto) {
-    capturePhotoSaveLittleFS();
-    takeNewPhoto = false;
+  // if (Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "" /* databaseId can be (default) or empty */, documentPath.c_str(), content.raw(), variablesUpdated.c_str()))
+  //   //Serial.printf("OK\n%s\n\n", fbdo.payload().c_str());
+  // else
+  //   Serial.println(fbdo.errorReason());
   }
-  delay(1);
-  if (Firebase.ready()) {
-    Serial.print("Uploading picture... ");
 
-    if (Firebase.Storage.upload(&fbdo, STORAGE_BUCKET_ID, getPhotoPath().c_str(), mem_storage_type_flash, getBucketPhoto().c_str(), "image/jpeg", fcsUploadCallback)) {
-      Serial.printf("\nDownload URL: %s\n", fbdo.downloadURL().c_str());
-    } else {
-      Serial.println(fbdo.errorReason());
-    }
-  }
+void writeDataToFirebase() {
+  // Create a FirebaseJson object to set the data you want to write
   FirebaseJson content;
 
-  content.set("fields/url/stringValue", "waste-detections/" + WiFi.macAddress() + ".jpg" );
+  content.set("fields/detail/stringValue", "...");
+  content.set("fields/detection-result/stringValue", "plastic");
+  content.set("fields/event/stringValue", "uuid event");
+  content.set("fields/imageUrl/stringValue", "imageurl");
+  content.set("fields/location/geoPointValue/latitude", 1.0000);
+  content.set("fields/location/geoPointValue/longitude", 1.0000);
+  content.set("fields/name/stringValue", "nama bin");
+  content.set("fields/levelPlastic/doubleValue", 0.0);
+  content.set("fields/levelPaper/doubleValue", 0.0);
+  content.set("fields/levelOthers/doubleValue", 0.0);
 
   // Specify the document path
-  String documentPath = "waste-detections/" + WiFi.macAddress();
+  String documentPath = "trash-bins/" + WiFi.macAddress();
 
-  Serial.print("Creating photo document... ");
+  Serial.print("Creating document... ");
 
   if (Firebase.Firestore.createDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), content.raw()))
     Serial.printf("OK\n%s\n\n", fbdo.payload().c_str());
   else
     Serial.println(fbdo.errorReason());
-
 }
 
-void firebase_setup() {
-
-  initLittleFS();
-  // Turn off the 'brownout detector'
-  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
-  initCamera();
+void firebase_setup() { // panggil di setup
 
   Serial.printf("Firebase Client v%s\n\n", FIREBASE_CLIENT_VERSION);
 
@@ -235,42 +172,60 @@ void firebase_setup() {
 
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
+
+  //updateCoordinates(); nanti taro sini
+  
 }
 
-void firebase_loop() {
-  if (Firebase.ready() && (millis() - dataMillis > 15000 || dataMillis == 0)) {
-    dataMillis = millis();
+void firebase_loop() { // panggil di loop
+  if (Firebase.ready() && (millis() - dataMillis > 5000 || dataMillis == 0)) {
+    dataMillis = millis();   
 
-    if (!taskCompleted) {
-      taskCompleted = true;
-      writeDataToFirebase(); // Call the write data function
-    }
+    writeDataToFirebase();
 
-    if (ObjectDetected == true){ //Trigger take pic 
-      shotAndSend();
-      takeNewPhoto = true;
-    }
+    updateLevels();
+
+    getResult();
+
+    //resetDetectionResult(); abis fetch get result dan udah gerakin motor, panggil ini func
     
-
-    getDataFromFirebase(); // Call the get data function
-
-    String documentPath = "trash-bins/" + WiFi.macAddress();
-    String fieldPath = "fields/name/stringValue";
-    String newValue = "asuuuuuu";
-
   }
 }
 
-void fcsUploadCallback(FCS_UploadStatusInfo info) {
-  if (info.status == firebase_fcs_upload_status_init) {
-    Serial.printf("Uploading file %s (%d) to %s\n", info.localFileName.c_str(), info.fileSize, info.remoteFileName.c_str());
-  } else if (info.status == firebase_fcs_upload_status_upload) {
-    Serial.printf("Uploaded %d%s, Elapsed time %d ms\n", (int)info.progress, "%", info.elapsedTime);
-  } else if (info.status == firebase_fcs_upload_status_complete) {
-    Serial.println("Upload completed\n");
-    FileMetaInfo meta = fbdo.metaData();
+void updateLevels() { //panggil di loop
+  String documentPath = "trash-bins/" + WiFi.macAddress();
+  String fieldPathPlastic = "fields/fillPlastic/doubleValue";
+  String fieldPathPaper = "fields/fillPaper/doubleValue";
+  String fieldPathOthers = "fields/fillOthers/doubleValue";
+  String variableUpdatedPlastic = "fillPlastic";
+  String variableUpdatedPaper = "fillPaper";
+  String variableUpdatedOthers = "fillOthers";
 
-  } else if (info.status == firebase_fcs_upload_status_error) {
-    Serial.printf("Upload failed, %s\n", info.errorMsg.c_str());
-  }
+   updateFirestoreFieldValue(documentPath, fieldPathPlastic, levelPlastic, variableUpdatedPlastic);
+   updateFirestoreFieldValue(documentPath, fieldPathPaper, levelPaper, variableUpdatedPaper);
+   updateFirestoreFieldValue(documentPath, fieldPathOthers, levelOthers, variableUpdatedOthers);
+}
+
+void updateCoordinates(){ //panggil di setup cuman msi lom bisa update data ke firestore
+  String documentPath = "trash-bins/" + WiFi.macAddress();
+  String fieldlatitude = "fields/location/geopointValue/latitude";
+  String fieldlongitude = "fields/location/geopointValue/longitude";
+
+  // Create a FirebaseJson object to hold the data you want to update
+  FirebaseJson content;
+
+  content.clear();
+
+  // Set the new value for the field you want to update
+  content.set(fieldlatitude.c_str(), latCoordinates);
+  content.set(fieldlongitude.c_str(), longCoordinates);
+
+  
+
+  Serial.print("Updating document... ");
+
+  if (Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "" /* databaseId can be (default) or empty */, documentPath.c_str(), content.raw(), "latitude,longitude" ))
+            Serial.printf("ok\n%s\n\n", fbdo.payload().c_str());
+        else
+            Serial.println(fbdo.errorReason());
 }

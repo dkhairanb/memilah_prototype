@@ -10,7 +10,7 @@
 static AccelStepper stepper1(1, step1, dir1);
 static AccelStepper stepper2(1, step2, dir2);
 
-extern int trash_type;
+// extern int trash_type;
 
 void stepper_setup();
 void stepper_loop();
