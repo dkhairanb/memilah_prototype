@@ -17,16 +17,21 @@ long duration;
 float distanceCm;
 float distanceInch;
 
+
+
 static void MoveStepper(void *pvParameters);
 
 void setup() {
   
   Serial.begin(115200);
 
-  pinMode(FLASH_GPIO_NUM, OUTPUT);
+  // pinMode(FLASH_GPIO_NUM, OUTPUT);
 
-  //Stepper Settings
-  stepper_setup();
+  // //Stepper Settings
+  // stepper_setup();
+
+  espnow_slave_setup();
+
 
   //Ultrasonic Settings
   // ultrasonic_setup();
@@ -39,8 +44,7 @@ void loop() {
   vTaskDelay(0);
   
 
-
-
+  espnow_slave_loop();
 
   // if(ObjectDetected == true){
   //     digitalWrite(FLASH_GPIO_NUM, HIGH);
@@ -59,7 +63,7 @@ void MoveStepper(void *pvParameters) {
 
   while (1){
     
-    stepper_loop();
+    // stepper_loop();
 
     
     vTaskDelay(10);
