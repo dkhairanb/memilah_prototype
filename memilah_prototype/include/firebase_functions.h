@@ -17,8 +17,9 @@ FirebaseData fbdo;
 FirebaseAuth auth;
 FirebaseConfig config;
 
-extern String TrashType;
+String TrashType;
 boolean takeNewPhoto = true;
+boolean objectDetected = false;
 
 int trashCategory; 
 bool taskCompleted = false;
@@ -44,7 +45,7 @@ void updateLevels(); //Panggil abis get data dari sensor di loop
 
 // Function to get data from Firebase Firestore
 
-void getResult() { //panggil di loop bagian awal2
+void getResultCategory() { //panggil di loop bagian awal2
   String documentPath = "trash-bins/" + WiFi.macAddress();
   String mask = "`detection-result`";
 
@@ -71,11 +72,40 @@ void getResult() { //panggil di loop bagian awal2
         trashCategory = 2;
       }
 
-      Serial.println("Detection result: ");
-      Serial.print(TrashType);
+      Serial.print("Detection result: ");
+      Serial.println(TrashType);
 
       Serial.println("int: ");
       Serial.print(trashCategory);
+
+    }
+  } else {
+    Serial.print("Failed to fetch data: ");
+    Serial.println(fbdo.errorReason());
+  }
+}
+
+void getResultObjectDetected() { //panggil di loop bagian awal2
+  String documentPath = "trash-bins/" + WiFi.macAddress();
+  String mask = "`objectDetected`";
+
+  if (Firebase.Firestore.getDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), mask.c_str())) {
+    Serial.println("Data fetched successfully.");
+
+    // Parse the JSON data using ArduinoJson
+    DynamicJsonDocument doc(2048);  // Adjust the size according to your data
+    DeserializationError error = deserializeJson(doc, fbdo.payload());
+
+    if (error) {
+      Serial.print("Failed to parse JSON data: ");
+      Serial.println(error.c_str());
+    } else {
+
+      objectDetected  = doc["fields"]["objectDetected"]["booleanValue"].as<bool>();
+
+      Serial.print("Detected: ");
+      Serial.print(objectDetected);
+
     }
   } else {
     Serial.print("Failed to fetch data: ");
@@ -112,7 +142,7 @@ void resetDetectionResult(){ //setelah gerakin motor panggil function ini di fun
   // Set the new value for the field you want to update
   content.set(fieldPath.c_str(), newValue);
 
-  Serial.print("Updating document... ");
+  // Serial.print("Updating document... ");
 
   // if (Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "" /* databaseId can be (default) or empty */, documentPath.c_str(), content.raw(), variablesUpdated.c_str()))
   //   //Serial.printf("OK\n%s\n\n", fbdo.payload().c_str());
@@ -138,7 +168,7 @@ void writeDataToFirebase() {
   // Specify the document path
   String documentPath = "trash-bins/" + WiFi.macAddress();
 
-  Serial.print("Creating document... ");
+  // Serial.print("Creating document... ");
 
   if (Firebase.Firestore.createDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), content.raw()))
     Serial.printf("OK\n%s\n\n", fbdo.payload().c_str());
@@ -185,7 +215,9 @@ void firebase_loop() { // panggil di loop
 
     updateLevels();
 
-    getResult();
+    getResultCategory();
+
+    getResultObjectDetected();
 
     //resetDetectionResult(); abis fetch get result dan udah gerakin motor, panggil ini func
     

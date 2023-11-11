@@ -1,10 +1,8 @@
 #include "stepper.h"
-// #include "firebase_functions.h"
 
 #include <string.h>
 
-int trash_type = 0;
-String TrashType;
+extern int trashCategory;
 
 void stepper_setup() {
   
@@ -26,42 +24,27 @@ void stepper_setup() {
 
 void stepper_loop() {
   
-  // switch (trash_type)
-  // {
-  // case 0:
-  //   trashtype_paper();
-  //   Serial.println("Waste Type: Paper");
-  //   break;
-  // case 1:
-  //   trashtype_plastic();
-  //   Serial.println("Waste Type: Plastic");
-  //   break;
-  // case 2:
-  //   trashtype_others();
-  //   Serial.println("Waste Type: Others");
-  //   break;
-  
-  // default:
-  //   break;
-  // }
-
-  if(TrashType == "Paper"){
-    trashtype_paper();
-    Serial.println(TrashType);
-  }
-  else if (TrashType == "Plastic")
+  switch (trashCategory)
   {
-    // trashtype_plastic();
+  case 0:
+    trashtype_plastic();
+    Serial.println("Waste Type: Plastic");
+    // delay(5000);
+    break;
+  case 1:
+    trashtype_paper();
+    Serial.println("Waste Type: Paper");
+    // delay(5000);
+    break;
+  case 2:
     trashtype_others();
-  }
-  else
-  {
-    // trashtype_others();
-    // trashtype_plastic();
-    trashtype_paper();
-  }
+    // delay(5000);
+    Serial.println("Waste Type: Others");
+    break;
   
-  
+  default:
+    break;
+  }
 }
 
 void trashtype_plastic() {
