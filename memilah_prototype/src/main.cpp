@@ -55,8 +55,9 @@ void MoveStepper(void *pvParameters) {
     // if(objectDetected == true){
     //   stepper_loop();
     // }
-
-    stepper_loop();
+    if(objectDetected == true){
+      stepper_loop();
+    }
 
     // delay(5000);
 
