@@ -5,7 +5,7 @@ extern int trashCategory;
 
 void stepper_setup() {
 
-  switch (trashCategory)
+  switch (2)
   {
   case 0: //Plastic
     stepper1.setMaxSpeed(500);
@@ -27,11 +27,11 @@ void stepper_setup() {
     break;
   case 2: //Others
     stepper1.setMaxSpeed(500);
-    stepper1.setAcceleration(100);
+    stepper1.setAcceleration(500);
     stepper1.moveTo(100);
 
     stepper2.setMaxSpeed(500);
-    stepper2.setAcceleration(100);
+    stepper2.setAcceleration(500);
     stepper2.moveTo(-100);
     break;
   
@@ -43,22 +43,19 @@ void stepper_setup() {
 
 void stepper_loop() {
   
-  switch (trashCategory)
+  switch (2)
   {
   case 0:
-    trashtype_paper();
-    
+    trashtype_plastic();
     // delay(5000);
     break;
   case 1:
-    trashtype_plastic();
-    Serial.println("Waste Type: Paper");
+    trashtype_paper();
     // delay(5000);
     break;
   case 2:
     trashtype_others();
     // delay(5000);
-    Serial.println("Waste Type: Others");
     break;
   
   default:
@@ -71,13 +68,10 @@ void trashtype_plastic() {
   stepper2.run();
 
   if (stepper1.distanceToGo() == 0){
-    delay(2000);
-    Serial.println("Waste Type: Plastic");
     stepper1.moveTo(-stepper1.currentPosition());
   }
 
   if (stepper2.distanceToGo() == 0){
-    delay(2000);
     stepper2.moveTo(-stepper2.currentPosition());
   }
 }
@@ -87,13 +81,15 @@ void trashtype_paper() {
   stepper2.run();
 
   if (stepper1.distanceToGo() == 0){
-    delay(2000);
+    // delay(2000);
     stepper1.moveTo(-stepper1.currentPosition());
+    // stepper1.stop();
   }
 
   if (stepper2.distanceToGo() == 0){
-    delay(2000);
+    // delay(2000);
     stepper2.moveTo(-stepper2.currentPosition());
+    // stepper2.stop();
   }
 }
 
@@ -102,12 +98,16 @@ void trashtype_others() {
   stepper2.run();
 
   if (stepper1.distanceToGo() == 0){
-    delay(2000);
+
     stepper1.moveTo(-stepper1.currentPosition());
+    // delay(2000);
+    // stepper1.stop();
   }
 
   if (stepper2.distanceToGo() == 0){
-    delay(2000);
+    
     stepper2.moveTo(-stepper2.currentPosition());
+    // delay(2000);
+    // stepper2.stop();
   }
 }

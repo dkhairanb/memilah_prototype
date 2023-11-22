@@ -1,11 +1,11 @@
 #include <Arduino.h>
 #include <AccelStepper.h>
 
-#define step1 12
-#define dir1 14
+#define step1 23
+#define dir1 22
 
-#define step2 18
-#define dir2 19
+#define step2 19
+#define dir2 18
 
 static AccelStepper stepper1(1, step1, dir1);
 static AccelStepper stepper2(1, step2, dir2);
