@@ -11,6 +11,11 @@ long duration;
 float distanceCm;
 float distanceInch;
 
+
+bool objectDetectionHandled = false; 
+
+void setTrashCategory(int trashCategory);
+
 void MoveStepper();
 
 void setup() {
@@ -26,7 +31,7 @@ void setup() {
   stepper_setup();
 
   // Ultrasonic Settings
-  // ultrasonic_setup();
+  ultrasonic_setup();
 }
 
 void loop() {
@@ -35,16 +40,30 @@ void loop() {
   // delay(5000);
   bool hasRun = false;
 
-  while (objectDetected == true) {
-    hasRun = stepper_loop();
-    // delay(6000);
-    if(hasRun){
-      // delay(5000);
-      break;
+  stepper_loop();
+
+    // Check for serial input
+    // Check for serial input
+  if (objectDetected == true && !objectDetectionHandled)
+  {
+    int newTrashCategory = trashCategory;
+    if (newTrashCategory >= 0)
+    {
+      setTrashCategory(newTrashCategory);
+      Serial.print("New trashCategory set: ");
+      Serial.println(newTrashCategory);
     }
-    // delay(6000);
-    // resetObjectDetected();
+   
+    resetObjectDetected();
+
+    // Set the flag to true to indicate that resetObjectDetected has been called
+    objectDetectionHandled = true;
   }
+  else if(objectDetected == false){
+    objectDetectionHandled = false;
+  }
+
+  ultrasonic_loop();
     // resetObjectDetected();
 
 }

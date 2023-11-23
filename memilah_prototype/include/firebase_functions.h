@@ -190,7 +190,7 @@ void firebase_setup() { // panggil di setup
 }
 
 void firebase_loop() { // panggil di loop
-  if (Firebase.ready() && (millis() - dataMillis > 10000 || dataMillis == 0)) {
+  if (Firebase.ready() && (millis() - dataMillis > 8000 || dataMillis == 0)) {
     dataMillis = millis();   
 
     writeDataToFirebase();

@@ -8,111 +8,125 @@ extern int trashCategory;
 
 
 unsigned long previousMillis = 0;
-const long interval = 5000;
+const long interval = 3000;
 
+// int trashCategory = 2;
+int originalPosition1 = 0;
+int originalPosition2 = 0;
+bool returningToOriginal = false;  // Flag to indicate if returning to original positions
+void setTrashCategory(int trashCategory);
 
 void stepper_setup()
 {
+  Serial.begin(115200); // Initialize serial communication
 
-    switch (trashCategory) {
-    case 0: //paper
-      stepper1.setMaxSpeed(500.0);
-      stepper1.setAcceleration(500.0);
-      stepper1.moveTo(400);
+  // Set initial trashCategory
+  setTrashCategory(trashCategory);
 
-      stepper2.setMaxSpeed(150.0);
-      stepper2.setAcceleration(150.0);
-      stepper2.moveTo(200);
-      break;
-    case 1: //plastic
-      stepper1.setMaxSpeed(150.0);
-      stepper1.setAcceleration(150.0);
-      stepper1.moveTo(-200);
+  // Set initial original positions
+  originalPosition1 = stepper1.currentPosition();
+  originalPosition2 = stepper2.currentPosition();
+}
 
-      stepper2.setMaxSpeed(500.0);
-      stepper2.setAcceleration(500.0);
-      stepper2.moveTo(-400);
-      break;
-    case 2: //others
-      stepper1.setMaxSpeed(600.0);
-      stepper1.setAcceleration(500.0);
-      stepper1.moveTo(100);
+void setTrashCategory(int category)
+{
+  trashCategory = category;
 
-      stepper2.setMaxSpeed(600.0);
-      stepper2.setAcceleration(500.0);
-      stepper2.moveTo(-100);
-      break;
-    default:
-      break;
+  switch (trashCategory)
+  {
+  case 0:
+    stepper1.setMaxSpeed(100.0);
+    stepper1.setAcceleration(100.0);
+    stepper1.moveTo(200);
+
+    stepper2.setMaxSpeed(500.0);
+    stepper2.setAcceleration(500.0);
+    stepper2.moveTo(400);
+    break;
+  case 1:
+    stepper1.setMaxSpeed(500.0);
+    stepper1.setAcceleration(500.0);
+    stepper1.moveTo(-400);
+
+    stepper2.setMaxSpeed(100.0);
+    stepper2.setAcceleration(100.0);
+    stepper2.moveTo(-200);
+    break;
+  case 2:
+    stepper1.setMaxSpeed(600.0);
+    stepper1.setAcceleration(500.0);
+    stepper1.moveTo(150);
+
+    stepper2.setMaxSpeed(600.0);
+    stepper2.setAcceleration(500.0);
+    stepper2.moveTo(-150);
+    break;
+  default:
+    break;
   }
 }
 
-// void stepper_loop()
-// {
-//     // Run both steppers
-//     stepper1.run();
-//     stepper2.run();
-
-//     // Check if both steppers have reached their target positions
-//     if (stepper1.distanceToGo() == 0 && stepper2.distanceToGo() == 0)
-//     {
-//         // Start the delay after both steppers have reached their targets
-//         unsigned long currentMillis = millis();
-//         if (currentMillis - previousMillis >= interval)
-//         {
-//             // Set new destinations for both steppers
-//             stepper1.moveTo(-0);
-//             stepper2.moveTo(-0);
-
-//             // Record the start time of the delay
-//             previousMillis = currentMillis;
-
-//             // objectDetected = false;
-
-//             // resetObjectDetected();
-
-//             // Print debugging information
-//             Serial.print("Stepper1 Pos: ");
-//             Serial.print(stepper1.currentPosition());
-//             Serial.print(", Stepper2 Pos: ");
-//             Serial.println(stepper2.currentPosition());
-//         }
-//     }
-// }
-
 bool stepper_loop()
 {
+  // Run both steppers
+  stepper1.run();
+  stepper2.run();
 
-    // Run both steppers
-    stepper1.run();
-    stepper2.run();
-
-    // Check if both steppers have reached their target positions
-    if (stepper1.distanceToGo() == 0 && stepper2.distanceToGo() == 0)
+  // Check if both steppers have reached their target positions
+  if (stepper1.distanceToGo() == 0 && stepper2.distanceToGo() == 0)
+  {
+    if (!returningToOriginal)
     {
-        // Start the delay after both steppers have reached their targets
-        unsigned long currentMillis = millis();
-        if (currentMillis - previousMillis >= interval)
-        {
-            // Set new destinations for both steppers
-            stepper1.moveTo(-0);
-            stepper2.moveTo(-0);
+      // Start the delay after both steppers have reached their targets
+      unsigned long currentMillis = millis();
+      if (currentMillis - previousMillis >= interval)
+      {
+        // Go back to the original positions
+        stepper1.moveTo(originalPosition1);
+        stepper2.moveTo(originalPosition2);
 
-            // stepper1.currentPosition();
+        // Set the flag to true
+        returningToOriginal = true;
 
-            // Record the start time of the delay
-            previousMillis = currentMillis;
+        // Record the start time of the delay
+        previousMillis = currentMillis;
 
-            // objectDetected = false;
-
-            // resetObjectDetected();
-
-            // Print debugging information
-            Serial.print("Stepper1 Pos: ");
-            Serial.print(stepper1.currentPosition());
-            Serial.print(", Stepper2 Pos: ");
-            Serial.println(stepper2.currentPosition());
-        }
+        // Print debugging information
+        // Serial.println("Returning to original positions.");
+      }
     }
-    return true;
+    else
+    {
+      // Stop the steppers when they reach their original positions
+      stepper1.stop();
+      stepper2.stop();
+
+      // Reset the flag to false
+      returningToOriginal = false;
+
+      // Print debugging information
+      // Serial.println("Reached original positions. Stopping steppers.");
+    }
+  }
+
+  // Check for serial input
+  // if (Serial.available() > 0)
+  // {
+  //   int newTrashCategory = Serial.parseInt();
+  //   if (newTrashCategory >= 0)
+  //   {
+  //     setTrashCategory(newTrashCategory);
+  //     Serial.print("New trashCategory set: ");
+  //     Serial.println(newTrashCategory);
+  //   }
+  //   else
+  //   {
+  //     Serial.println("Invalid input. Please enter a non-negative integer.");
+  //   }
+
+  //   // Clear the serial buffer
+  //   while (Serial.available() > 0)
+  //     Serial.read();
+  // }
+  return true;
 }
