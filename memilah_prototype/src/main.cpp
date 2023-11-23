@@ -30,20 +30,23 @@ void setup() {
 }
 
 void loop() {
-  vTaskDelay(10);
+
   firebase_loop();
   // delay(5000);
+  bool hasRun = false;
 
-  if (objectDetected == true) {
-    MoveStepper();
-    resetObjectDetected();
+  while (objectDetected == true) {
+    hasRun = stepper_loop();
+    // delay(6000);
+    if(hasRun){
+      // delay(5000);
+      break;
+    }
+    // delay(6000);
+    // resetObjectDetected();
   }
+    // resetObjectDetected();
+
 }
 
-void MoveStepper() {
-  // Stepper will run here
-  stepper_loop();
 
-  // Give the stepper time to complete its cycle
-  // delay(10000);
-}

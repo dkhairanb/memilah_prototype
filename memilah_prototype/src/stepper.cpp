@@ -1,113 +1,118 @@
 #include "stepper.h"
 #include <Arduino.h>
 #include <AccelStepper.h>
+// #include "firebase_functions.h"
+
 extern int trashCategory;
+// extern bool objectDetected;
 
-void stepper_setup() {
 
-  switch (2)
-  {
-  case 0: //Plastic
-    stepper1.setMaxSpeed(500);
-    stepper1.setAcceleration(100);
-    stepper1.moveTo(400);
+unsigned long previousMillis = 0;
+const long interval = 5000;
 
-    stepper2.setMaxSpeed(500);
-    stepper2.setAcceleration(100);
-    stepper2.moveTo(200);
-    break;
-  case 1: //Paper
-    stepper1.setMaxSpeed(500);
-    stepper1.setAcceleration(100);
-    stepper1.moveTo(-200);
 
-    stepper2.setMaxSpeed(500);
-    stepper2.setAcceleration(100);
-    stepper2.moveTo(-400);
-    break;
-  case 2: //Others
-    stepper1.setMaxSpeed(500);
-    stepper1.setAcceleration(500);
-    stepper1.moveTo(100);
+void stepper_setup()
+{
 
-    stepper2.setMaxSpeed(500);
-    stepper2.setAcceleration(500);
-    stepper2.moveTo(-100);
-    break;
-  
-  default:
-    break;
-  }
+    switch (trashCategory) {
+    case 0: //paper
+      stepper1.setMaxSpeed(500.0);
+      stepper1.setAcceleration(500.0);
+      stepper1.moveTo(400);
 
-}
+      stepper2.setMaxSpeed(150.0);
+      stepper2.setAcceleration(150.0);
+      stepper2.moveTo(200);
+      break;
+    case 1: //plastic
+      stepper1.setMaxSpeed(150.0);
+      stepper1.setAcceleration(150.0);
+      stepper1.moveTo(-200);
 
-void stepper_loop() {
-  
-  switch (2)
-  {
-  case 0:
-    trashtype_plastic();
-    // delay(5000);
-    break;
-  case 1:
-    trashtype_paper();
-    // delay(5000);
-    break;
-  case 2:
-    trashtype_others();
-    // delay(5000);
-    break;
-  
-  default:
-    break;
+      stepper2.setMaxSpeed(500.0);
+      stepper2.setAcceleration(500.0);
+      stepper2.moveTo(-400);
+      break;
+    case 2: //others
+      stepper1.setMaxSpeed(600.0);
+      stepper1.setAcceleration(500.0);
+      stepper1.moveTo(100);
+
+      stepper2.setMaxSpeed(600.0);
+      stepper2.setAcceleration(500.0);
+      stepper2.moveTo(-100);
+      break;
+    default:
+      break;
   }
 }
 
-void trashtype_plastic() {
-  stepper1.run();
-  stepper2.run();
+// void stepper_loop()
+// {
+//     // Run both steppers
+//     stepper1.run();
+//     stepper2.run();
 
-  if (stepper1.distanceToGo() == 0){
-    stepper1.moveTo(-stepper1.currentPosition());
-  }
+//     // Check if both steppers have reached their target positions
+//     if (stepper1.distanceToGo() == 0 && stepper2.distanceToGo() == 0)
+//     {
+//         // Start the delay after both steppers have reached their targets
+//         unsigned long currentMillis = millis();
+//         if (currentMillis - previousMillis >= interval)
+//         {
+//             // Set new destinations for both steppers
+//             stepper1.moveTo(-0);
+//             stepper2.moveTo(-0);
 
-  if (stepper2.distanceToGo() == 0){
-    stepper2.moveTo(-stepper2.currentPosition());
-  }
-}
+//             // Record the start time of the delay
+//             previousMillis = currentMillis;
 
-void trashtype_paper() {
-  stepper1.run();
-  stepper2.run();
+//             // objectDetected = false;
 
-  if (stepper1.distanceToGo() == 0){
-    // delay(2000);
-    stepper1.moveTo(-stepper1.currentPosition());
-    // stepper1.stop();
-  }
+//             // resetObjectDetected();
 
-  if (stepper2.distanceToGo() == 0){
-    // delay(2000);
-    stepper2.moveTo(-stepper2.currentPosition());
-    // stepper2.stop();
-  }
-}
+//             // Print debugging information
+//             Serial.print("Stepper1 Pos: ");
+//             Serial.print(stepper1.currentPosition());
+//             Serial.print(", Stepper2 Pos: ");
+//             Serial.println(stepper2.currentPosition());
+//         }
+//     }
+// }
 
-void trashtype_others() {
-  stepper1.run();
-  stepper2.run();
+bool stepper_loop()
+{
 
-  if (stepper1.distanceToGo() == 0){
+    // Run both steppers
+    stepper1.run();
+    stepper2.run();
 
-    stepper1.moveTo(-stepper1.currentPosition());
-    // delay(2000);
-    // stepper1.stop();
-  }
+    // Check if both steppers have reached their target positions
+    if (stepper1.distanceToGo() == 0 && stepper2.distanceToGo() == 0)
+    {
+        // Start the delay after both steppers have reached their targets
+        unsigned long currentMillis = millis();
+        if (currentMillis - previousMillis >= interval)
+        {
+            // Set new destinations for both steppers
+            stepper1.moveTo(-0);
+            stepper2.moveTo(-0);
 
-  if (stepper2.distanceToGo() == 0){
-    
-    stepper2.moveTo(-stepper2.currentPosition());
-    // delay(2000);
-    // stepper2.stop();
-  }
+            // stepper1.currentPosition();
+
+            // Record the start time of the delay
+            previousMillis = currentMillis;
+
+            // objectDetected = false;
+
+            // resetObjectDetected();
+
+            // Print debugging information
+            Serial.print("Stepper1 Pos: ");
+            Serial.print(stepper1.currentPosition());
+            Serial.print(", Stepper2 Pos: ");
+            Serial.println(stepper2.currentPosition());
+        }
+    }
+    return true;
 }

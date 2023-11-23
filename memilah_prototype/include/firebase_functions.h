@@ -43,6 +43,8 @@ void updateCoordinates(); //panggil di setup (msi blom bisa update valuenya)
 
 void updateLevels(); //Panggil abis get data dari sensor di loop
 
+void resetObjectDetected();
+
 // Function to get data from Firebase Firestore
 
 void getResultCategory() { //panggil di loop bagian awal2
@@ -92,6 +94,7 @@ void getResultObjectDetected() { //panggil di loop bagian awal2
     // Parse the JSON data using ArduinoJson
     DynamicJsonDocument doc(2048);  // Adjust the size according to your data
     DeserializationError error = deserializeJson(doc, fbdo.payload());
+    
 
     if (error) {
       Serial.print("Failed to parse JSON data: ");
@@ -104,31 +107,18 @@ void getResultObjectDetected() { //panggil di loop bagian awal2
       Serial.print(objectDetected);
 
     }
+   
+    // if (objectDetected == true) {
+    // stepper_loop();
+    // delay(6000);
+    // resetObjectDetected();
+  // }
+
   } else {
     Serial.print("Failed to fetch data: ");
     Serial.println(fbdo.errorReason());
   }
 }
-
-// void resetDetectionResult(){ //setelah gerakin motor panggil function ini di function tempat gerakin steppernya
-//   // Create a FirebaseJson object to hold the data you want to update
-//   FirebaseJson content;
-
-//   String documentPath = "trash-bins/A0:B7:65:5A:DA:44" ;
-
-//   content.clear();
-
-//   // Set the new value for the field you want to update
-//   content.set("fields/detection-result/stringValue", "-");
-
-//   Serial.print("resetting results... ");
-
-//   if (Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "" /* databaseId can be (default) or empty */, documentPath.c_str(), content.raw(),  "`detection-result`"))
-//     //Serial.printf("OK\n%s\n\n", fbdo.payload().c_str());
-//     Serial.println("ok");
-//   else
-//     Serial.println(fbdo.errorReason());
-// }
 
  void updateFirestoreFieldValue(const String& documentPath, const String& fieldPath, const double& newValue, const String variablesUpdated) {// gausah dipanggil kemana2
   // Create a FirebaseJson object to hold the data you want to update
@@ -200,7 +190,7 @@ void firebase_setup() { // panggil di setup
 }
 
 void firebase_loop() { // panggil di loop
-  if (Firebase.ready() && (millis() - dataMillis > 5000 || dataMillis == 0)) {
+  if (Firebase.ready() && (millis() - dataMillis > 10000 || dataMillis == 0)) {
     dataMillis = millis();   
 
     writeDataToFirebase();
@@ -255,25 +245,23 @@ void updateCoordinates(){ //panggil di setup cuman msi lom bisa update data ke f
             Serial.println("");
 }
 
-void resetObjectDetected(){
-  String documentPath = "trash-bins/A0:B7:65:5A:DA:44";
-  String fieldObjectDetected = "fields/objectDetected/boolValue";
+void resetObjectDetected(){ //setelah gerakin motor panggil function ini di function tempat gerakin steppernya
 
-  // Create a FirebaseJson object to hold the data you want to update
   FirebaseJson content;
+
+  String documentPath = "trash-bins/A0:B7:65:5A:DA:44";
+  Serial.println(WiFi.macAddress());
 
   content.clear();
 
   // Set the new value for the field you want to update
-  content.set(fieldObjectDetected.c_str(), false);
+  content.set("fields/objectDetected/booleanValue", 0);
 
-  
+  Serial.print("resetting object detected");
 
-  Serial.print("Updating document... ");
-
-  if (Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "" /* databaseId can be (default) or empty */, documentPath.c_str(), content.raw(), "latitude,longitude" ))
-            Serial.printf("ok\n%s\n\n", fbdo.payload().c_str());
-        else
-            // Serial.println(fbdo.errorReason());
-            Serial.println("");
+  if (Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "" /* databaseId can be (default) or empty */, documentPath.c_str(), content.raw(),  "objectDetected"))
+    //Serial.printf("OK\n%s\n\n", fbdo.payload().c_str());
+    Serial.println("ok");
+  else
+    Serial.println(fbdo.errorReason());
 }

@@ -13,7 +13,9 @@ static AccelStepper stepper2(1, step2, dir2);
 // extern int trash_type;
 
 void stepper_setup();
-void stepper_loop();
+// void stepper_loop();
+bool stepper_loop();
+
 
 void trashtype_plastic();
 void trashtype_paper();
