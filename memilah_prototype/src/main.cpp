@@ -37,12 +37,11 @@ void setup() {
 void loop() {
 
   firebase_loop();
-  // delay(5000);
+
   bool hasRun = false;
 
   stepper_loop();
 
-    // Check for serial input
     // Check for serial input
   if (objectDetected == true && !objectDetectionHandled)
   {
@@ -62,9 +61,6 @@ void loop() {
   else if(objectDetected == false){
     objectDetectionHandled = false;
   }
-
-  ultrasonic_loop();
-    // resetObjectDetected();
 
 }
 

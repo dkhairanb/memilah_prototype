@@ -2,7 +2,7 @@
 
 void WiFiConnect(){
 WiFi.mode(WIFI_STA);
-  WiFi.begin("Dhil iPhone", "12345678");
+  WiFi.begin("kayzan", "kayzan1212");
   Serial.print("Connecting to WiFi ..");
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print('.');

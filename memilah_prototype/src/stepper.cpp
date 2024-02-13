@@ -1,10 +1,9 @@
 #include "stepper.h"
 #include <Arduino.h>
 #include <AccelStepper.h>
-// #include "firebase_functions.h"
+
 
 extern int trashCategory;
-// extern bool objectDetected;
 
 
 unsigned long previousMillis = 0;

@@ -37,16 +37,45 @@ double longCoordinates = 9.153;
 
 String documentPath;
 
-
-
 void updateCoordinates(); //panggil di setup (msi blom bisa update valuenya)
 
 void updateLevels(); //Panggil abis get data dari sensor di loop
 
 void resetObjectDetected();
 
-// Function to get data from Firebase Firestore
+void firebase_setup() { // panggil di setup
 
+  Serial.printf("Firebase Client v%s\n\n", FIREBASE_CLIENT_VERSION);
+
+  /* Assign the API key (required) */
+  config.api_key = API_KEY;
+
+  /* Assign the user sign-in credentials */
+  auth.user.email = USER_EMAIL;
+  auth.user.password = USER_PASSWORD;
+
+  /* Assign the callback function for the long-running token generation task */
+  config.token_status_callback = tokenStatusCallback; // see addons/TokenHelper.h
+
+  // Comment or pass false value when WiFi reconnection will be controlled by your code or third-party library, e.g., WiFiManager
+  Firebase.reconnectNetwork(true);
+
+  // Since v4.4.x, BearSSL engine was used, the SSL buffer needs to be set.
+  // Large data transmission may require a larger RX buffer, otherwise connection issues or data read timeout can occur.
+  fbdo.setBSSLBufferSize(4096 /* Rx buffer size in bytes from 512 - 16384 */, 1024 /* Tx buffer size in bytes from 512 - 16384 */);
+
+  // Limit the size of the response payload to be collected in FirebaseData
+  fbdo.setResponseSize(2048);
+
+  Firebase.begin(&config, &auth);
+  Firebase.reconnectWiFi(true);
+
+  //updateCoordinates(); nanti taro sini
+  
+}
+
+
+// Function to get data from Firebase Firestore
 void getResultCategory() { //panggil di loop bagian awal2
   String documentPath = "trash-bins/A0:B7:65:5A:DA:44";
   String mask = "`detection-result`";
@@ -107,13 +136,6 @@ void getResultObjectDetected() { //panggil di loop bagian awal2
       Serial.print(objectDetected);
 
     }
-   
-    // if (objectDetected == true) {
-    // stepper_loop();
-    // delay(6000);
-    // resetObjectDetected();
-  // }
-
   } else {
     Serial.print("Failed to fetch data: ");
     Serial.println(fbdo.errorReason());
@@ -156,54 +178,6 @@ void writeDataToFirebase() {
   else
     // Serial.println(fbdo.errorReason());
     Serial.println("");
-}
-
-void firebase_setup() { // panggil di setup
-
-  Serial.printf("Firebase Client v%s\n\n", FIREBASE_CLIENT_VERSION);
-
-  /* Assign the API key (required) */
-  config.api_key = API_KEY;
-
-  /* Assign the user sign-in credentials */
-  auth.user.email = USER_EMAIL;
-  auth.user.password = USER_PASSWORD;
-
-  /* Assign the callback function for the long-running token generation task */
-  config.token_status_callback = tokenStatusCallback; // see addons/TokenHelper.h
-
-  // Comment or pass false value when WiFi reconnection will be controlled by your code or third-party library, e.g., WiFiManager
-  Firebase.reconnectNetwork(true);
-
-  // Since v4.4.x, BearSSL engine was used, the SSL buffer needs to be set.
-  // Large data transmission may require a larger RX buffer, otherwise connection issues or data read timeout can occur.
-  fbdo.setBSSLBufferSize(4096 /* Rx buffer size in bytes from 512 - 16384 */, 1024 /* Tx buffer size in bytes from 512 - 16384 */);
-
-  // Limit the size of the response payload to be collected in FirebaseData
-  fbdo.setResponseSize(2048);
-
-  Firebase.begin(&config, &auth);
-  Firebase.reconnectWiFi(true);
-
-  //updateCoordinates(); nanti taro sini
-  
-}
-
-void firebase_loop() { // panggil di loop
-  if (Firebase.ready() && (millis() - dataMillis > 8000 || dataMillis == 0)) {
-    dataMillis = millis();   
-
-    writeDataToFirebase();
-
-    updateLevels();
-
-    getResultCategory();
-
-    getResultObjectDetected();
-
-    //resetDetectionResult(); abis fetch get result dan udah gerakin motor, panggil ini func
-    
-  }
 }
 
 void updateLevels() { //panggil di loop
@@ -264,4 +238,19 @@ void resetObjectDetected(){ //setelah gerakin motor panggil function ini di func
     Serial.println("ok");
   else
     Serial.println(fbdo.errorReason());
+}
+
+void firebase_loop() { // panggil di loop
+  if (Firebase.ready() && (millis() - dataMillis > 1000 || dataMillis == 0)) {
+    dataMillis = millis();   
+
+    writeDataToFirebase();
+
+    updateLevels();
+
+    getResultCategory();
+
+    getResultObjectDetected();
+    
+  }
 }
