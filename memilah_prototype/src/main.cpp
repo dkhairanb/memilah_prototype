@@ -24,6 +24,8 @@ void setup() {
   // WiFi Settings
   WiFiConnect();
 
+  delay(5000);
+
   // Firebase Settings
   firebase_setup();
 
@@ -54,6 +56,8 @@ void loop() {
     }
    
     resetObjectDetected();
+
+    // resetCategoryDefaultValue();
 
     // Set the flag to true to indicate that resetObjectDetected has been called
     objectDetectionHandled = true;

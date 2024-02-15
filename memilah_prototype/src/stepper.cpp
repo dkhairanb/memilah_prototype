@@ -107,25 +107,5 @@ bool stepper_loop()
       // Serial.println("Reached original positions. Stopping steppers.");
     }
   }
-
-  // Check for serial input
-  // if (Serial.available() > 0)
-  // {
-  //   int newTrashCategory = Serial.parseInt();
-  //   if (newTrashCategory >= 0)
-  //   {
-  //     setTrashCategory(newTrashCategory);
-  //     Serial.print("New trashCategory set: ");
-  //     Serial.println(newTrashCategory);
-  //   }
-  //   else
-  //   {
-  //     Serial.println("Invalid input. Please enter a non-negative integer.");
-  //   }
-
-  //   // Clear the serial buffer
-  //   while (Serial.available() > 0)
-  //     Serial.read();
-  // }
   return true;
 }

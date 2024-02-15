@@ -43,37 +43,27 @@ void updateLevels(); //Panggil abis get data dari sensor di loop
 
 void resetObjectDetected();
 
+void resetCategoryDefaultValue();
+
 void firebase_setup() { // panggil di setup
 
   Serial.printf("Firebase Client v%s\n\n", FIREBASE_CLIENT_VERSION);
 
-  /* Assign the API key (required) */
   config.api_key = API_KEY;
 
-  /* Assign the user sign-in credentials */
   auth.user.email = USER_EMAIL;
   auth.user.password = USER_PASSWORD;
 
-  /* Assign the callback function for the long-running token generation task */
-  config.token_status_callback = tokenStatusCallback; // see addons/TokenHelper.h
+  config.token_status_callback = tokenStatusCallback; 
 
-  // Comment or pass false value when WiFi reconnection will be controlled by your code or third-party library, e.g., WiFiManager
   Firebase.reconnectNetwork(true);
 
-  // Since v4.4.x, BearSSL engine was used, the SSL buffer needs to be set.
-  // Large data transmission may require a larger RX buffer, otherwise connection issues or data read timeout can occur.
-  fbdo.setBSSLBufferSize(4096 /* Rx buffer size in bytes from 512 - 16384 */, 1024 /* Tx buffer size in bytes from 512 - 16384 */);
-
-  // Limit the size of the response payload to be collected in FirebaseData
   fbdo.setResponseSize(2048);
 
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
-
-  //updateCoordinates(); nanti taro sini
   
 }
-
 
 // Function to get data from Firebase Firestore
 void getResultCategory() { //panggil di loop bagian awal2
@@ -101,6 +91,8 @@ void getResultCategory() { //panggil di loop bagian awal2
         trashCategory = 1;
       } else if (TrashType == "Others") {
         trashCategory = 2;
+      } else if (TrashType == "Default"){
+        trashCategory = 3;
       }
 
       Serial.print("Detection result: ");
@@ -208,8 +200,6 @@ void updateCoordinates(){ //panggil di setup cuman msi lom bisa update data ke f
   content.set(fieldlatitude.c_str(), latCoordinates);
   content.set(fieldlongitude.c_str(), longCoordinates);
 
-  
-
   Serial.print("Updating document... ");
 
   if (Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "" /* databaseId can be (default) or empty */, documentPath.c_str(), content.raw(), "latitude,longitude" ))
@@ -240,8 +230,29 @@ void resetObjectDetected(){ //setelah gerakin motor panggil function ini di func
     Serial.println(fbdo.errorReason());
 }
 
-void firebase_loop() { // panggil di loop
-  if (Firebase.ready() && (millis() - dataMillis > 1000 || dataMillis == 0)) {
+void resetCategoryDefaultValue(){ //setelah gerakin motor panggil function ini di function tempat gerakin steppernya
+
+  FirebaseJson content;
+
+  String documentPath = "trash-bins/A0:B7:65:5A:DA:44"; 
+  Serial.println(WiFi.macAddress());
+
+  content.clear();
+
+  // Set the new value for the field you want to update
+  content.set("fields/detection-result/stringValue", "Default");
+
+  Serial.print("Resetting default value");
+
+  if (Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "" /* databaseId can be (default) or empty */, documentPath.c_str(), content.raw(),  "objectDetected"))
+    //Serial.printf("OK\n%s\n\n", fbdo.payload().c_str());
+    Serial.println("ok");
+  else
+    Serial.println(fbdo.errorReason());
+}
+
+void firebase_loop() { 
+  if (Firebase.ready() && (millis() - dataMillis > 8000 || dataMillis == 0)) {
     dataMillis = millis();   
 
     writeDataToFirebase();
