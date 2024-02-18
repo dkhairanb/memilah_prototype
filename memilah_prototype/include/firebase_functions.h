@@ -67,7 +67,7 @@ void firebase_setup() { // panggil di setup
 
 // Function to get data from Firebase Firestore
 void getResultCategory() { //panggil di loop bagian awal2
-  String documentPath = "trash-bins/A0:B7:65:5A:DA:44";
+  String documentPath = "trash-bins/24:0A:C4:5B:66:30";
   String mask = "`detection-result`";
 
   if (Firebase.Firestore.getDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), mask.c_str())) {
@@ -106,7 +106,7 @@ void getResultCategory() { //panggil di loop bagian awal2
 }
 
 void getResultObjectDetected() { //panggil di loop bagian awal2
-  String documentPath = "trash-bins/A0:B7:65:5A:DA:44";
+  String documentPath = "trash-bins/24:0A:C4:5B:66:30";
   String mask = "`objectDetected`";
 
   if (Firebase.Firestore.getDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), mask.c_str())) {
@@ -161,7 +161,7 @@ void writeDataToFirebase() {
   content.set("fields/levelOthers/doubleValue", 0.0);
 
   // Specify the document path
-  String documentPath = "trash-bins/A0:B7:65:5A:DA:44";
+  String documentPath = "trash-bins/24:0A:C4:5B:66:30";
 
   // Serial.print("Creating document... ");
 
@@ -173,7 +173,7 @@ void writeDataToFirebase() {
 }
 
 void updateLevels() { //panggil di loop
-  String documentPath = "trash-bins/A0:B7:65:5A:DA:44";
+  String documentPath = "trash-bins/24:0A:C4:5B:66:30";
   String fieldPathPlastic = "fields/fillPlastic/doubleValue";
   String fieldPathPaper = "fields/fillPaper/doubleValue";
   String fieldPathOthers = "fields/fillOthers/doubleValue";
@@ -187,7 +187,7 @@ void updateLevels() { //panggil di loop
 }
 
 void updateCoordinates(){ //panggil di setup cuman msi lom bisa update data ke firestore
-  String documentPath = "trash-bins/A0:B7:65:5A:DA:44";
+  String documentPath = "trash-bins/24:0A:C4:5B:66:30";
   String fieldlatitude = "fields/location/geopointValue/latitude";
   String fieldlongitude = "fields/location/geopointValue/longitude";
 
@@ -213,7 +213,7 @@ void resetObjectDetected(){ //setelah gerakin motor panggil function ini di func
 
   FirebaseJson content;
 
-  String documentPath = "trash-bins/A0:B7:65:5A:DA:44";
+  String documentPath = "trash-bins/24:0A:C4:5B:66:30";
   Serial.println(WiFi.macAddress());
 
   content.clear();
@@ -234,7 +234,7 @@ void resetCategoryDefaultValue(){ //setelah gerakin motor panggil function ini d
 
   FirebaseJson content;
 
-  String documentPath = "trash-bins/A0:B7:65:5A:DA:44"; 
+  String documentPath = "trash-bins/24:0A:C4:5B:66:30"; 
   Serial.println(WiFi.macAddress());
 
   content.clear();
